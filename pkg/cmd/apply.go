@@ -17,18 +17,15 @@ limitations under the License.
 package cmd
 
 import (
-	"bufio"
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/MakeNowJust/heredoc/v2"
 	"github.com/Masterminds/semver/v3"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
-	"golang.org/x/term"
 
 	"k8c.io/kubeone/pkg/credentials"
 	"k8c.io/kubeone/pkg/state"
@@ -284,7 +281,7 @@ func runApplyInstall(s *state.State, opts *applyOpts) error { // Print the expec
 	}
 
 	fmt.Println()
-	confirm, err := confirmApply(opts.AutoApprove)
+	confirm, err := confirmCommand(opts.AutoApprove)
 	if err != nil {
 		return err
 	}
@@ -360,7 +357,7 @@ func runApplyUpgradeIfNeeded(s *state.State, opts *applyOpts) error {
 	}
 
 	fmt.Println()
-	confirm, err := confirmApply(opts.AutoApprove)
+	confirm, err := confirmCommand(opts.AutoApprove)
 	if err != nil {
 		return err
 	}
@@ -371,28 +368,6 @@ func runApplyUpgradeIfNeeded(s *state.State, opts *applyOpts) error {
 	}
 
 	return errors.Wrap(tasksToRun.Run(s), "failed to reconcile the cluster")
-}
-
-func confirmApply(autoApprove bool) (bool, error) {
-	if autoApprove {
-		return true, nil
-	}
-
-	if !term.IsTerminal(int(os.Stdin.Fd())) || !term.IsTerminal(int(os.Stdout.Fd())) {
-		return false, errors.New("not running in the terminal")
-	}
-
-	reader := bufio.NewReader(os.Stdin)
-	fmt.Print("Do you want to proceed (yes/no): ")
-
-	confirmation, err := reader.ReadString('\n')
-	if err != nil {
-		return false, err
-	}
-
-	fmt.Println()
-
-	return strings.Trim(confirmation, "\n") == "yes", nil
 }
 
 func printHostInformation(host state.Host) {
